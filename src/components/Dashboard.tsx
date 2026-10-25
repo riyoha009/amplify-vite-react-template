@@ -1,6 +1,8 @@
 
 import { useState } from "react";
 import "../App.css";
+import WorkoutForm from "./WorkoutForm";
+import { WorkoutSession } from "../models/WorkoutSession";
 
 type Page =
   | "Dashboard"
@@ -20,6 +22,14 @@ export default function Dashboard({
   onSignOut
 }: DashboardProps) {
   const [page, setPage] = useState<Page>("Dashboard");
+
+  const [showWorkoutForm, setShowWorkoutForm] = useState(false);
+  const [workouts, setWorkouts] = useState<WorkoutSession[]>([]);
+
+  function handleSaveWorkout(workout: WorkoutSession) {
+  setWorkouts(previous => [workout, ...previous]);
+  setShowWorkoutForm(false);
+}
 
   const menu: Page[] = [
     "Dashboard",
@@ -136,16 +146,83 @@ export default function Dashboard({
           </>
         )}
 
-        {page === "My Workouts" && (
-          <section className="panel">
-            <h2>My Workouts</h2>
-            <p>Record and manage your workout sessions.</p>
+        
+{page === "My Workouts" && (
+  <>
+    {showWorkoutForm ? (
+      <WorkoutForm
+        onSave={handleSaveWorkout}
+        onCancel={() => setShowWorkoutForm(false)}
+      />
+    ) : (
+      <section className="panel">
+        <h2>My Workouts</h2>
+        <p>Record and manage your workout sessions.</p>
 
-            <button className="primary-button">
-              Add Workout
-            </button>
-          </section>
-        )}
+        <button
+          className="primary-button"
+          onClick={() => setShowWorkoutForm(true)}
+        >
+          Add Workout
+        </button>
+
+        <div className="workout-history">
+          <h3>Workout History</h3>
+
+          {workouts.length === 0 ? (
+            <p>No workouts recorded yet.</p>
+          ) : (
+            workouts.map(workout => (
+              <div
+                className="workout-history-card"
+                key={workout.id}
+              >
+                <h4>{workout.workoutType}</h4>
+
+                <p>
+                  Date:{" "}
+                  {new Date(workout.date).toLocaleDateString()}
+                </p>
+
+                {workout.muscleGroup && (
+                  <p>
+                    Muscle Group: {workout.muscleGroup}
+                  </p>
+                )}
+
+                <p>
+                  Exercises: {workout.getExerciseCount()}
+                </p>
+
+                <p>
+                  Total Sets: {workout.getTotalSets()}
+                </p>
+
+                <p>
+                  Total Volume: {workout.getTotalVolume()} lbs
+                </p>
+
+                {workout.exercises.map((exercise, index) => (
+                  <div key={index}>
+                    <h5>{exercise.name}</h5>
+
+                    {exercise.sets.map(set => (
+                      <p key={set.setNumber}>
+                        Set {set.setNumber}: {set.reps} reps
+                        at {set.weight} lbs
+                      </p>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            ))
+          )}
+        </div>
+      </section>
+    )}
+  </>
+)}
+
 
         {page === "My Meals" && (
           <>

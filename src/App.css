@@ -340,3 +340,91 @@ button {
     margin-top: 15px;
   }
 }
+
+
+/* Add Workout Form */
+
+.workout-form-container {
+  background: white;
+  border-radius: 14px;
+  padding: 28px;
+  max-width: 900px;
+  width: 100%;
+}
+
+.workout-form-container h2 {
+  margin-top: 0;
+  margin-bottom: 24px;
+}
+
+.workout-field {
+  margin-bottom: 18px;
+}
+
+.workout-field label,
+.workout-set-row label {
+  display: block;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.workout-field input,
+.workout-field select,
+.workout-set-row input {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  margin-top: 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font: inherit;
+}
+
+.workout-exercise {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.workout-set-row {
+  display: grid;
+  grid-template-columns: 65px 1fr 1fr auto;
+  align-items: end;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.workout-form-container button {
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  margin-right: 8px;
+  margin-bottom: 8px;
+}
+
+.workout-form-container button[type="submit"] {
+  background: #16a34a;
+  color: white;
+  border-color: #16a34a;
+}
+
+.workout-form-container button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.workout-form-actions {
+  margin-top: 24px;
+}
+
+.workout-error {
+  color: #b91c1c;
+  margin-top: 12px;
+}
+
+@media (max-width: 650px) {
+  .workout-set-row {
+    grid-template-columns: 1fr;
+  }
+}
