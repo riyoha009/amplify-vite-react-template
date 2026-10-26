@@ -1,10 +1,12 @@
-
+// Importing the necessary classes and types that will be used by Exercise
 import { WorkoutSet } from "./WorkoutSet";
 import type { MuscleGroup } from "./WorkoutType";
 
+// Define the exercise class to represent an exercise and its workout sets
 export class Exercise {
   public sets: WorkoutSet[] = [];
 
+  // Initialize an exercise with its name and target muscle group
   constructor(
     public name: string,
     public muscleGroup: MuscleGroup

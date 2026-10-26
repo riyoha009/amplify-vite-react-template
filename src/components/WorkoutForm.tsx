@@ -1,4 +1,13 @@
-
+/*
+This component provides the user interface for recording new workouts.
+User can select a workout type and muscle group, add exercises, and record
+number of sets, reps, and weight for each exercise. WorkoutForm validates
+the entered information, creates a WorkoutSession object, and passes the
+completed workout to the Dashboard for saving in the workout history. We
+will have to change this around as we complete the Cardio and Yoga sections.
+ChatGPT aided us in writing this code.
+*/
+  
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { Exercise } from "../models/Exercise";

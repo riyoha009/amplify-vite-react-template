@@ -1,5 +1,7 @@
-
+// Define the WorkoutSet class to represent a single set of an exercise
 export class WorkoutSet {
+  
+  // Initialize a workout set with its set number, repetitions, and weight
   constructor(
     public setNumber: number,
     public reps: number,
@@ -24,6 +26,7 @@ export class WorkoutSet {
     }
   }
 
+  // Return a readable summary of the set's repetitions and weight
   getSummary(): string {
     return `Set ${this.setNumber}: ${this.reps} reps at ${this.weight} lbs`;
   }

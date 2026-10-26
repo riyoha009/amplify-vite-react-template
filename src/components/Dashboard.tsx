@@ -1,9 +1,10 @@
-
+// Import the necessary files and requirements to create the Dashboard
 import { useState } from "react";
 import "../App.css";
 import WorkoutForm from "./WorkoutForm";
 import { WorkoutSession } from "../models/WorkoutSession";
 
+// Define the pages that users can navigate to in the Dashboard
 type Page =
   | "Dashboard"
   | "My Workouts"
@@ -12,25 +13,34 @@ type Page =
   | "Fitness Goals"
   | "AI Assistant";
 
+// Define the properties that the Dashboard component receives
 type DashboardProps = {
   username: string;
   onSignOut: () => void;
 };
 
+// Responsible for displaying the application's pages
 export default function Dashboard({
   username,
   onSignOut
 }: DashboardProps) {
+  
+  // Track which page is currently selected in the sidebar
   const [page, setPage] = useState<Page>("Dashboard");
-
+  
+  // Controls whether the Add Workout form is visible
   const [showWorkoutForm, setShowWorkoutForm] = useState(false);
+  
+  // Store the user's workout sessions in an array
   const [workouts, setWorkouts] = useState<WorkoutSession[]>([]);
 
+  // Save a completed workout to the workout history
   function handleSaveWorkout(workout: WorkoutSession) {
   setWorkouts(previous => [workout, ...previous]);
   setShowWorkoutForm(false);
 }
 
+  // Define the pages that will appear in the sidebar menu
   const menu: Page[] = [
     "Dashboard",
     "My Workouts",
@@ -40,6 +50,7 @@ export default function Dashboard({
     "AI Assistant"
   ];
 
+  // Return the JSX thats defines the dashboard's UI
   return (
     <div className="app-layout">
       <aside className="sidebar">
@@ -84,6 +95,7 @@ export default function Dashboard({
           </div>
         </header>
 
+	{/* Only display the following content when Dashboard is selected */}
         {page === "Dashboard" && (
           <>
             <section className="welcome-card">
@@ -146,7 +158,8 @@ export default function Dashboard({
           </>
         )}
 
-        
+
+{/* Only display the following when My Workouts is selected */}        
 {page === "My Workouts" && (
   <>
     {showWorkoutForm ? (
@@ -224,7 +237,8 @@ export default function Dashboard({
 )}
 
 
-        {page === "My Meals" && (
+        {/* Only display the following when My Meals is selected */}
+	{page === "My Meals" && (
           <>
             <section className="meal-summary">
               <div className="stat-card">
@@ -277,6 +291,7 @@ export default function Dashboard({
           </>
         )}
 
+	{/* This section is displayed when the Progress tab is selected; not fully functional yet*/}
         {page === "Progress" && (
           <section className="panel">
             <h2>My Progress</h2>
@@ -287,6 +302,7 @@ export default function Dashboard({
           </section>
         )}
 
+	{/* This section is displayed when the Fitness Goals tab is selected; not fully functional yet */}
         {page === "Fitness Goals" && (
           <section className="panel">
             <h2>Fitness Goals</h2>
@@ -298,6 +314,7 @@ export default function Dashboard({
           </section>
         )}
 
+	{/* This section is displayed when the AI Assistant tab is selected; not fully functional yet */}
         {page === "AI Assistant" && (
           <section className="panel">
             <h2>AI Fitness Assistant</h2>

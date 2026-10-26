@@ -1,10 +1,12 @@
-
+// Import the necessary classes and types that will be used by WorkoutSession
 import { Exercise } from "./Exercise";
 import type { WorkoutType, MuscleGroup } from "./WorkoutType";
 
+// Define the WorkoutSession class to represent a complete workout
 export class WorkoutSession {
   public exercises: Exercise[] = [];
 
+  // Initialize a workout with a unique ID, workout type, date, and optionally a muscle group
   constructor(
     public id: string,
     public workoutType: WorkoutType,
