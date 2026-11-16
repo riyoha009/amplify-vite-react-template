@@ -1,8 +1,16 @@
 // Import the necessary files and requirements to create the Dashboard
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "../App.css";
 import WorkoutForm from "./WorkoutForm";
 import { WorkoutSession } from "../models/WorkoutSession";
+import MealForm from "./MealForm";
+import { Meal } from "../models/Meal";
+import { generateClient } from "aws-amplify/data";
+import type { Schema } from "../../amplify/data/resource";
+import { FoodItem } from "../models/FoodItem";
+
+// Creates a client we can use to perform database operations
+const client = generateClient<Schema>();
 
 // Define the pages that users can navigate to in the Dashboard
 type Page =
@@ -34,11 +42,156 @@ export default function Dashboard({
   // Store the user's workout sessions in an array
   const [workouts, setWorkouts] = useState<WorkoutSession[]>([]);
 
+  const [showMealForm, setShowMealForm] = useState(false);
+  
+  const [meals, setMeals] = useState<Meal[]>([]);
+
+  useEffect(() => {
+    async function loadMeals() {
+      const { data, errors } = await client.models.Meal.list();
+      if (errors?.length) {
+        console.error("Failed to load meals:", errors);
+	return;
+      }
+
+      const loadedMeals = data.map(async record => {
+        const meal = new Meal(record.name, new Date(record.date));
+	meal.id = record.id;
+        const { data: foodRecords, errors: foodErrors } = await record.foods();
+
+	if (foodErrors?.length) {
+	  console.error("Failed to load food items:", foodErrors);
+	  throw new Error("Could not load food items.");
+        }
+
+	foodRecords.forEach(foodRecord => {
+          const foodItem = new FoodItem(
+            foodRecord.name,
+            foodRecord.servings,
+            foodRecord.calories,
+            foodRecord.carbohydrates,
+            foodRecord.protein,
+            foodRecord.fats
+          );
+
+          meal.addFood(foodItem);
+        });
+        return meal;
+      });
+      const completedMeals = await Promise.all(loadedMeals);
+      setMeals(completedMeals);
+    }
+    void loadMeals();
+  }, []);
+
   // Save a completed workout to the workout history
   function handleSaveWorkout(workout: WorkoutSession) {
   setWorkouts(previous => [workout, ...previous]);
   setShowWorkoutForm(false);
 }
+
+  async function handleSaveMeal(meal: Meal) {
+    try {
+      const { data: savedMeal, errors } = await client.models.Meal.create({
+        name: meal.name,
+	date: meal.date.toISOString()
+      });
+
+      if (errors?.length || !savedMeal) {
+        console.error("Failed to save meal:", errors);
+	alert("Could not save the meal.");
+	return;
+      }
+
+      meal.id = savedMeal.id;
+
+      for (const foodItem of meal.foods) {
+        const { errors: foodErrors } = await client.models.FoodItem.create({
+          name: foodItem.name,
+	  servings: foodItem.servings,
+	  calories: foodItem.calories,
+	  carbohydrates: foodItem.carbohydrates,
+	  protein: foodItem.protein,
+	  fats: foodItem.fats,
+	  mealId: savedMeal.id
+	});
+
+        if (foodErrors?.length) {
+	  console.error("Failed to save food item:", foodErrors);
+	  alert("A food item could not be saved.");
+	  return;
+	}
+      }
+
+      setMeals(previousMeals => [...previousMeals, meal]);
+      setShowMealForm(false);
+      
+    } catch (error) {
+        console.error("Error saving meal:", error);
+        alert("An error occurred while saving the meal.");
+    }
+  }
+
+  async function handleDeleteMeal(index: number) {
+    const confirmed = window.confirm("Are you sure you want to delete this meal?");
+    if (!confirmed) {
+      return;
+    }
+
+    const mealToDelete = meals[index];
+    if (!mealToDelete || !mealToDelete.id) {
+      alert("Could not find the saved meal.");
+      return;
+    }
+
+    try {
+
+    const { data: foodRecords, errors: foodErrors } =
+      await client.models.FoodItem.list({
+        filter: {
+	  mealId: {
+	    eq: mealToDelete.id
+	  }
+	}
+      });
+
+    if (foodErrors?.length) {
+      console.error("Failed to retrieve food items:", foodErrors);
+      alert("Could not retrieve the meal's food items.");
+      return;
+    }
+
+    for (const foodRecord of foodRecords) {
+      const { errors: deleteErrors } = await client.models.FoodItem.delete({
+        id: foodRecord.id
+      });
+
+      if (deleteErrors?.length) {
+        console.error("Failed to delete food item:", deleteErrors);
+	alert("Could not delete all food items.");
+	return;
+      }
+    }
+
+    const { errors: mealDeleteErrors } = await client.models.Meal.delete({
+      id: mealToDelete.id
+    });
+
+    if (mealDeleteErrors?.length) {
+      console.error("Failed to delete meal:", mealDeleteErrors);
+      alert("Could not delete the meal.");
+      return;
+    } 
+
+    setMeals(previousMeals =>
+      previousMeals.filter(meal => meal.id !== mealToDelete.id)
+    );
+    
+    } catch (error) {
+      console.error("Error deleting meal:", error);
+      alert("An error occurred while deleting the meal.");
+    }
+  }
 
   // Define the pages that will appear in the sidebar menu
   const menu: Page[] = [
@@ -266,6 +419,13 @@ export default function Dashboard({
               </div>
             </section>
 
+	    {showMealForm ? (
+	      <MealForm
+	        onSave={handleSaveMeal}
+	        onCancel={() => setShowMealForm(false)}
+	      />
+	    ) : (
+
             <section className="panel">
               <div className="meal-header">
                 <div>
@@ -275,11 +435,12 @@ export default function Dashboard({
                   </p>
                 </div>
 
-                <button className="primary-button">
+                <button className="primary-button" onClick={() => setShowMealForm(true)}>
                   Add Meal
                 </button>
               </div>
 
+	    {meals.length === 0 ? (
               <div className="meal-empty">
                 <h3>No meals recorded yet</h3>
                 <p>
@@ -287,7 +448,37 @@ export default function Dashboard({
                   you start logging them.
                 </p>
               </div>
+	    ) : (
+	      <div className="meal-history">
+	        {meals.map((meal, index) => (
+		  <div key={index}>
+		    <h3>{meal.name}</h3>
+		    <p>{meal.date.toLocaleString()}</p>
+		    <p>Total Calories: {meal.getTotalCalories()}</p>
+		    <p>Total Carbohydrates: {meal.getTotalCarbohydrates()} g</p>
+		    <p>Total Protein: {meal.getTotalProtein()} g</p>
+		    <p>Total Fats: {meal.getTotalFats()} g</p>
+
+		    <h4>Foods:</h4>
+		    <ul>
+		      {meal.foods.map((foodItem, foodIndex) => (
+			<li key={foodIndex}>
+			  {foodItem.name} - {foodItem.servings} servings
+			</li>
+		      ))}
+		    </ul>
+		    <button
+		      type="button"
+		      onClick={() => handleDeleteMeal(index)}
+		    >
+		      Delete Meal
+		    </button>
+		  </div>
+		))}
+	      </div>
+	    )}
             </section>
+	    )}
           </>
         )}
 

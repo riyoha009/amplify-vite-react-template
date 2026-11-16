@@ -14,6 +14,56 @@ const schema = a.schema({
 //    })
       }).authorization((allow) => [allow.owner()]),
 //    .authorization((allow) => [allow.publicApiKey()]),
+
+  Meal: a
+    .model({
+      name: a.string().required(),
+      date: a.datetime().required(),
+      foods: a.hasMany("FoodItem", "mealId"),
+    })
+    .authorization((allow) => [allow.owner()]),
+
+  FoodItem: a
+    .model({
+      name: a.string().required(),
+      servings: a.float().required(),
+      calories: a.float().required(),
+      carbohydrates: a.float().required(),
+      protein: a.float().required(),
+      fats: a.float().required(),
+      mealId: a.id().required(),
+      meal: a.belongsTo("Meal", "mealId"),
+    })
+    .authorization((allow) => [allow.owner()]),
+
+  WorkoutSession: a
+    .model({
+      workoutType: a.string().required(),
+      date: a.string().required(),
+      muscleGroup: a.string(),
+      exercises: a.hasMany("Exercise", "workoutSessionId"),
+    })
+    .authorization((allow) => [allow.owner()]),
+
+  Exercise: a
+    .model({
+      name: a.string().required(),
+      muscleGroup: a.string().required(),
+      workoutSessionId: a.id().required(),
+      workoutSession: a.belongsTo("WorkoutSession", "workoutSessionId"),
+      sets: a.hasMany("WorkoutSet", "exerciseId"),
+    })
+    .authorization((allow) => [allow.owner()]),
+
+  WorkoutSet: a
+    .model({
+      setNumber: a.integer().required(),
+      reps: a.integer().required(),
+      weight: a.float().required(),
+      exerciseId: a.id().required(),
+      exercise: a.belongsTo("Exercise", "exerciseId"),
+    })
+    .authorization((allow) => [allow.owner()]),
 });
 
 export type Schema = ClientSchema<typeof schema>;
