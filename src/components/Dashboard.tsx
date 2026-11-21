@@ -42,18 +42,29 @@ export default function Dashboard({
   // Store the user's workout sessions in an array
   const [workouts, setWorkouts] = useState<WorkoutSession[]>([]);
 
+  // Controls whether the Add Meal form is visible
   const [showMealForm, setShowMealForm] = useState(false);
   
+  // Stores the array of Meal objects displayed in Meal History
   const [meals, setMeals] = useState<Meal[]>([]);
 
+  // This function retrieves previously saved Meals and their associated Food Items from AWS Amplify,
+  // reconstructs them as TypeScript objects,
+  // and displays them in FitTrack Meal History
   useEffect(() => {
     async function loadMeals() {
       const { data, errors } = await client.models.Meal.list();
+
+      // ? operator is optional chaining
+      // allows JavaScript to check errors.length w/o throwing an error if errors is
+      // null or undefined
       if (errors?.length) {
         console.error("Failed to load meals:", errors);
 	return;
       }
 
+      // Iterate through Meal records retrieved from AWS Amplify and
+      // create a new Meal object for each one
       const loadedMeals = data.map(async record => {
         const meal = new Meal(record.name, new Date(record.date));
 	meal.id = record.id;
@@ -64,6 +75,7 @@ export default function Dashboard({
 	  throw new Error("Could not load food items.");
         }
 
+        // Reconstruct FoodItem objects, then add it to current Meal object's foods array
 	foodRecords.forEach(foodRecord => {
           const foodItem = new FoodItem(
             foodRecord.name,
@@ -78,6 +90,11 @@ export default function Dashboard({
         });
         return meal;
       });
+
+      // An array of Promises is initially produced for loadedMeals array
+      // A Promise represents the eventual result of an asynchronous operation
+      // Promise.all() waits until every Promise has successfully resolved
+      // setMeals() updates state 
       const completedMeals = await Promise.all(loadedMeals);
       setMeals(completedMeals);
     }
@@ -90,6 +107,8 @@ export default function Dashboard({
   setShowWorkoutForm(false);
 }
 
+  // Saves a completed meal and all of its food items to AWS Amplify database and
+  // updates meal history displayed in FitTrack
   async function handleSaveMeal(meal: Meal) {
     try {
       const { data: savedMeal, errors } = await client.models.Meal.create({
@@ -103,8 +122,10 @@ export default function Dashboard({
 	return;
       }
 
+      // Assign database ID to the Meal object
       meal.id = savedMeal.id;
 
+      // Creates a separate database record for each food item
       for (const foodItem of meal.foods) {
         const { errors: foodErrors } = await client.models.FoodItem.create({
           name: foodItem.name,
@@ -123,6 +144,9 @@ export default function Dashboard({
 	}
       }
 
+      // Updates the Meal History state in React
+      // Creates new array, copies elements from previousMeals and appends newly saved meal to it
+      // Hides form after meal has been saved successfully
       setMeals(previousMeals => [...previousMeals, meal]);
       setShowMealForm(false);
       
@@ -132,6 +156,9 @@ export default function Dashboard({
     }
   }
 
+  // Identifies which meal the user wants to delete,
+  // retrieves its associated food items from AWS Amplify,
+  // deletes food items and meal from database 
   async function handleDeleteMeal(index: number) {
     const confirmed = window.confirm("Are you sure you want to delete this meal?");
     if (!confirmed) {
@@ -146,6 +173,8 @@ export default function Dashboard({
 
     try {
 
+    // Retrieves food item records associated w/ the meal using filter
+    // Uses mealId to associate food items w/ the correct meal 
     const { data: foodRecords, errors: foodErrors } =
       await client.models.FoodItem.list({
         filter: {
@@ -161,6 +190,7 @@ export default function Dashboard({
       return;
     }
 
+    // Loops through foodRecords and deletes each FoodItem
     for (const foodRecord of foodRecords) {
       const { errors: deleteErrors } = await client.models.FoodItem.delete({
         id: foodRecord.id
@@ -173,6 +203,7 @@ export default function Dashboard({
       }
     }
 
+    // Deletes the Meal from AWS Amplify
     const { errors: mealDeleteErrors } = await client.models.Meal.delete({
       id: mealToDelete.id
     });
@@ -183,6 +214,7 @@ export default function Dashboard({
       return;
     } 
 
+    // Updates the React state
     setMeals(previousMeals =>
       previousMeals.filter(meal => meal.id !== mealToDelete.id)
     );
